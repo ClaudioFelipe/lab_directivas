@@ -71,56 +71,60 @@ def build_messages(contexto, pregunta):
 # -----------------------
 def consultar_conversacional(pregunta, k=TOP_K):
     global historial
+    try:
+        # 1) Recuperar fragmentos
+        query_vec = modelo.encode([pregunta])
+        ids, _ = index.knn_query(query_vec, k=k)
 
-    # 1) Recuperar fragmentos
-    query_vec = modelo.encode([pregunta])
-    ids, _ = index.knn_query(query_vec, k=k)
+        fragmentos = []
+        contexto = ""
+        for idx in ids[0]:
+            ref = referencias[idx]   # suponemos ref = (archivo, pagina, texto)
+            fragmentos.append(ref)
+            contexto += f"[{ref[0]} — pág {ref[1]}]\n{ref[2]}\n\n"
 
-    fragmentos = []
-    contexto = ""
-    for idx in ids[0]:
-        ref = referencias[idx]   # suponemos ref = (archivo, pagina, texto)
-        fragmentos.append(ref)
-        contexto += f"[{ref[0]} — pág {ref[1]}]\n{ref[2]}\n\n"
+        # 2) Estimar tokens (aprox)
+        tokens_contexto = estimar_tokens(contexto)
+        tokens_pregunta = estimar_tokens(pregunta)
+        tokens_historial = sum(estimar_tokens(m["content"]) for m in historial)
+        tokens_total = tokens_contexto + tokens_pregunta + tokens_historial + 300  # margen
 
-    # 2) Estimar tokens (aprox)
-    tokens_contexto = estimar_tokens(contexto)
-    tokens_pregunta = estimar_tokens(pregunta)
-    tokens_historial = sum(estimar_tokens(m["content"]) for m in historial)
-    tokens_total = tokens_contexto + tokens_pregunta + tokens_historial + 300  # margen
+        print("\n📊 Estimación de tokens:")
+        print(f"- Fragmentos: {tokens_contexto}")
+        print(f"- Pregunta: {tokens_pregunta}")
+        print(f"- Historial: {tokens_historial}")
+        print(f"- TOTAL: {tokens_total} / {TOKEN_LIMIT}")
+        if tokens_total > TOKEN_LIMIT:
+            print("⚠️ Advertencia: Podría exceder el límite del modelo.\n")
 
-    print("\n📊 Estimación de tokens:")
-    print(f"- Fragmentos: {tokens_contexto}")
-    print(f"- Pregunta: {tokens_pregunta}")
-    print(f"- Historial: {tokens_historial}")
-    print(f"- TOTAL: {tokens_total} / {TOKEN_LIMIT}")
-    if tokens_total > TOKEN_LIMIT:
-        print("⚠️ Advertencia: Podría exceder el límite del modelo.\n")
+        # 3) Construir messages sin persistir contexto en historial
+        messages = build_messages(contexto, pregunta)
 
-    # 3) Construir messages sin persistir contexto en historial
-    messages = build_messages(contexto, pregunta)
+        # 4) Llamar a Ollama
+        respuesta = ollama.chat(model="llama3", messages=messages)
+        contenido = respuesta["message"]["content"]
 
-    # 4) Llamar a Ollama
-    respuesta = ollama.chat(model="llama3", messages=messages)
-    contenido = respuesta["message"]["content"]
+        # 5) Actualizar historial SOLO con pregunta y respuesta (no con el contexto)
+        historial.append({"role": "user", "content": pregunta})
+        historial.append({"role": "assistant", "content": contenido})
 
-    # 5) Actualizar historial SOLO con pregunta y respuesta (no con el contexto)
-    historial.append({"role": "user", "content": pregunta})
-    historial.append({"role": "assistant", "content": contenido})
+        # Mantener historial acotado (últimos MAX_HISTORY_PAIRS pares)
+        max_items = MAX_HISTORY_PAIRS * 2
+        if len(historial) > max_items:
+            # conservar solo los últimos max_items mensajes
+            historial = historial[-max_items:]
 
-    # Mantener historial acotado (últimos MAX_HISTORY_PAIRS pares)
-    max_items = MAX_HISTORY_PAIRS * 2
-    if len(historial) > max_items:
-        # conservar solo los últimos max_items mensajes
-        historial = historial[-max_items:]
+        # 6) Mostrar fragmentos utilizados (archivo y página)
+        print("\n📚 Fragmentos utilizados:")
+        for frag in fragmentos:
+            print(f"- {frag[0]} — pág {frag[1]}")
 
-    # 6) Mostrar fragmentos utilizados (archivo y página)
-    print("\n📚 Fragmentos utilizados:")
-    for frag in fragmentos:
-        print(f"- {frag[0]} — pág {frag[1]}")
-
-    return contenido
-
+        return contenido
+    except hnswlib.Error as e:
+        return "Error en la búsqueda de similitud. Intenta reformular tu pregunta."
+    except Exception as e:
+        print(f"Error inesperado: {e}")
+        return "Lo siento, ocurrió un error procesando tu consulta."
 # -----------------------
 # Bucle interactivo
 # -----------------------

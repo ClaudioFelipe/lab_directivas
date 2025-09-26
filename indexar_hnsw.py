@@ -1,4 +1,4 @@
-import os, pickle
+import os, pickle, re
 import pdfplumber
 from sentence_transformers import SentenceTransformer
 import numpy as np
@@ -22,21 +22,27 @@ def extraer_fragmentos(ruta_pdf, max_chars=700, overlap=150):
     - overlap: cantidad de caracteres que se repite entre fragmentos consecutivos
     """
     frags = []
-    with pdfplumber.open(ruta_pdf) as pdf:
-        for num, pagina in enumerate(pdf.pages, start=1):
-            texto = pagina.extract_text()
-            if texto:
-                texto = texto.replace("\n", " ").strip()
-                if not texto:
-                    continue
-                start = 0
-                while start < len(texto):
-                    end = min(start + max_chars, len(texto))
-                    fragmento = texto[start:end].strip()
-                    if len(fragmento) > 50:  # evitar basura muy corta
-                        frags.append((os.path.basename(ruta_pdf), num, fragmento))
-                    start += max_chars - overlap
-    return frags
+    try:
+        with pdfplumber.open(ruta_pdf) as pdf:
+            for num, pagina in enumerate(pdf.pages, start=1):
+                texto = pagina.extract_text()
+                if texto:
+                    #texto = texto.replace("\n", " ").strip()
+                    texto = re.sub(r'\s+', ' ', texto.replace('\n', ' ')).strip()
+                    texto = re.sub(r'[^\w\s\.\,\;\:\-\(\)]', '', texto)  # limpiar caracteres especiales
+                    if not texto:
+                        continue
+                    start = 0
+                    while start < len(texto):
+                        end = min(start + max_chars, len(texto))
+                        fragmento = texto[start:end].strip()
+                        if len(fragmento) > 50:  # evitar basura muy corta
+                            frags.append((os.path.basename(ruta_pdf), num, fragmento))
+                        start += max_chars - overlap
+        return frags
+    except Exception as e:
+        print(f"❌ Error procesando {ruta_pdf}: {e}")
+        return []
 
 # -----------------------
 # Construcción del índice
