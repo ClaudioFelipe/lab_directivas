@@ -1,0 +1,12 @@
+001-A|Establece abreviaturas que deberán usarse para los diferentes escalafones y grados jerárquicos del personal de la Armada.
+002-A|Dicta normas para determinar la antigüedad del personal de Gente de Mar.
+003-A|Establece procedimiento para el reconocimiento y suspensión de los causantes de asignación familiar y maternal, del personal en servicio activo en la Institución.
+004-A|Establece procedimiento para el control de asistencia de los Oficiales de los Servicios de los escalafones profesionales, Oficiales de Servicio Religioso, Empleados Civiles, Personal a Contrata y Personal a Jornal e informa régimen y sistema de control de jornada que las leyes y reglamentos institucionales establecen para los Oficiales y Gente de Mar.
+005-A|Establece normas y procedimientos para comunica “ALTAS” y “BAJAS” del Personal.
+006-A|Establece procedimiento para la selección del personal de Gente de Mar de los Escalafones de Línea y de los Servicios, para ascenso al grado de Suboficial Mayor.
+007-A|Da a conocer disposiciones legales que otorgan beneficios compensatorios al personal que sufre algún grado de Inutilidad Física a raíz de accidentes en acto determinado del servicio.
+008-A|Establece fechas de investidura en sus nuevos grados para los Oficiales Jefes, Subalternos y personal de Gente de Mar
+010-A|Imparte instrucciones sobre plazo para envío de solicitud de autorización para ausentarse al extranjero o efectuar permiso sin goce de remuneraciones.
+013-A|Establece plazos para envío a la Dirección General del Personal, de la documentación que requiere ser tramitada posteriormente a la Comandancia en Jefe de la Armada.
+014-A|Norma procedimiento para el pago del beneficio de Asignación de Máquina.
+016-A|Dicta Normas para cancelación de Asignación por Pérdida de caja.
